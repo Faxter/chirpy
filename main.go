@@ -3,7 +3,8 @@ package main
 import "net/http"
 
 func main() {
-	s := new(http.ServeMux)
+	s := http.NewServeMux()
+	s.Handle("/", http.FileServer(http.Dir(".")))
 	serv := new(http.Server)
 	serv.Handler = s
 	serv.Addr = ":8080"
