@@ -26,9 +26,9 @@ func main() {
 	cfg := apiConfig{fileServerHits: atomic.Int32{}}
 	s := http.NewServeMux()
 	s.Handle("/app", cfg.incrementsMetrics(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
-	s.HandleFunc("/healthz", readinessEndpoint)
-	s.HandleFunc("/metrics", cfg.metricsEndpoint)
-	s.HandleFunc("/reset", cfg.resetMetricsEndpoint)
+	s.HandleFunc("GET /healthz", readinessEndpoint)
+	s.HandleFunc("GET /metrics", cfg.metricsEndpoint)
+	s.HandleFunc("POST /reset", cfg.resetMetricsEndpoint)
 	serv := new(http.Server)
 	serv.Handler = s
 	serv.Addr = ":8080"
