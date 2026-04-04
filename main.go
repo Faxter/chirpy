@@ -9,6 +9,7 @@ import (
 const (
 	KEY_CONTENT_TYPE   = "Content-Type"
 	CONTENT_TYPE_PLAIN = "text/plain; charset=utf-8"
+	CONTENT_TYPE_HTML  = "text/html"
 )
 
 type apiConfig struct {
@@ -27,8 +28,8 @@ func main() {
 	s := http.NewServeMux()
 	s.Handle("/app/", cfg.incrementsMetrics(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	s.HandleFunc("GET /api/healthz", readinessEndpoint)
-	s.HandleFunc("GET /api/metrics", cfg.metricsEndpoint)
-	s.HandleFunc("POST /api/reset", cfg.resetMetricsEndpoint)
+	s.HandleFunc("GET /admin/metrics", cfg.metricsEndpoint)
+	s.HandleFunc("POST /admin/reset", cfg.resetMetricsEndpoint)
 	serv := new(http.Server)
 	serv.Handler = s
 	serv.Addr = ":8080"
@@ -42,9 +43,9 @@ func readinessEndpoint(responseWriter http.ResponseWriter, _ *http.Request) {
 }
 
 func (a *apiConfig) metricsEndpoint(responseWriter http.ResponseWriter, _ *http.Request) {
-	responseWriter.Header().Add(KEY_CONTENT_TYPE, CONTENT_TYPE_PLAIN)
+	responseWriter.Header().Add(KEY_CONTENT_TYPE, CONTENT_TYPE_HTML)
 	responseWriter.WriteHeader(http.StatusOK)
-	responseWriter.Write(fmt.Appendf(nil, "Hits: %d", a.fileServerHits.Load()))
+	responseWriter.Write(fmt.Appendf(nil, "<html><body><h1>Welcome, Chirpy Admin</h1><p>Chirpy has been visited %d times!</p></body></html>", a.fileServerHits.Load()))
 }
 
 func (a *apiConfig) resetMetricsEndpoint(responseWriter http.ResponseWriter, _ *http.Request) {
