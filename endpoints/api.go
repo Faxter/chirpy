@@ -1,0 +1,98 @@
+package endpoints
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+)
+
+func ReadinessEndpoint(responseWriter http.ResponseWriter, _ *http.Request) {
+	responseWriter.Header().Add(KEY_CONTENT_TYPE, CONTENT_TYPE_PLAIN)
+	responseWriter.WriteHeader(http.StatusOK)
+	responseWriter.Write([]byte("OK"))
+}
+
+func ChirpValidatorEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
+	type parameters struct {
+		Body string `json:"body"`
+	}
+
+	decoder := json.NewDecoder(request.Body)
+	params := parameters{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error decoding paraneters: %s", err)
+		log.Println(logmsg)
+		respondWithError(responseWriter, 500, logmsg)
+		return
+	}
+
+	if len(params.Body) > MAX_CHIRP_LENGTH {
+		respondWithError(responseWriter, 400, "Chirp is too long")
+		return
+	}
+
+	respondWithCleanedJson(params.Body, responseWriter)
+}
+
+func censorWords(wordList []string) []string {
+	badSet := make(map[string]struct{})
+	for _, w := range BadWords() {
+		badSet[strings.ToLower(w)] = struct{}{}
+	}
+
+	result := make([]string, len(wordList))
+
+	for i, word := range wordList {
+		if _, found := badSet[strings.ToLower(word)]; found {
+			result[i] = "****"
+		} else {
+			result[i] = word
+		}
+	}
+
+	return result
+}
+
+func respondWithError(writer http.ResponseWriter, code int, msg string) {
+	type returnError struct {
+		Error string `json:"error"`
+	}
+	dat, err := json.Marshal(msg)
+	if err != nil {
+		fmt.Printf("Error marshalling JSON for error response (not sending response): %s", err)
+		writer.WriteHeader(500)
+		return
+	}
+	writer.Header().Set(KEY_CONTENT_TYPE, CONTENT_TYPE_JSON)
+	writer.WriteHeader(code)
+	writer.Write(dat)
+}
+
+func respondWithJSON(writer http.ResponseWriter, code int, payload interface{}) {
+	dat, err := json.Marshal(payload)
+	if err != nil {
+		respondWithError(writer, 500, "Error marshalling payload")
+		return
+	}
+
+	writer.Header().Set(KEY_CONTENT_TYPE, CONTENT_TYPE_JSON)
+	writer.WriteHeader(code)
+	writer.Write(dat)
+}
+
+func respondWithCleanedJson(body string, responseWriter http.ResponseWriter) {
+	type returnCleaned struct {
+		Cleaned string `json:"cleaned_body"`
+	}
+
+	bodyWordList := strings.Split(body, " ")
+	cleanedBody := strings.Join(censorWords(bodyWordList), " ")
+	respBody := returnCleaned{
+		Cleaned: cleanedBody,
+	}
+
+	respondWithJSON(responseWriter, 200, respBody)
+}
