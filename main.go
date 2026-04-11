@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync/atomic"
 )
 
@@ -66,14 +67,40 @@ func chirpValidatorEndpoint(responseWriter http.ResponseWriter, request *http.Re
 		return
 	}
 
-	type returnValid struct {
-		Valid bool `json:"valid"`
+	type returnCleaned struct {
+		Cleaned string `json:"cleaned_body"`
 	}
-	respBody := returnValid{
-		Valid: true,
+
+	bodyWordList := strings.Split(params.Body, " ")
+	cleanedBody := strings.Join(censorWords(bodyWordList), " ")
+	respBody := returnCleaned{
+		Cleaned: cleanedBody,
 	}
 
 	respondWithJSON(responseWriter, 200, respBody)
+}
+
+func badWords() []string {
+	return []string{"kerfuffle", "sharbert", "fornax"}
+}
+
+func censorWords(wordList []string) []string {
+	badSet := make(map[string]struct{})
+	for _, w := range badWords() {
+		badSet[strings.ToLower(w)] = struct{}{}
+	}
+
+	result := make([]string, len(wordList))
+
+	for i, word := range wordList {
+		if _, found := badSet[strings.ToLower(word)]; found {
+			result[i] = "****"
+		} else {
+			result[i] = word
+		}
+	}
+
+	return result
 }
 
 func respondWithError(writer http.ResponseWriter, code int, msg string) {
