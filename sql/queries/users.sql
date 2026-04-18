@@ -7,3 +7,6 @@ now(),
 $1
 )
 RETURNING *;
+
+-- name: DropUsers :exec
+DELETE FROM users;
