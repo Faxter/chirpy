@@ -1,1 +1,5 @@
 chirpy
+
+internal/database/
+
+.env

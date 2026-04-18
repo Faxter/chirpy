@@ -1,14 +1,28 @@
 package main
 
 import (
+	"database/sql"
 	"net/http"
+	"os"
 	"sync/atomic"
 
 	"github.com/faxter/chirpy/endpoints"
+	"github.com/faxter/chirpy/internal/database"
+	"github.com/joho/godotenv"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
-	cfg := endpoints.ApiConfig{FileServerHits: atomic.Int32{}}
+	godotenv.Load(".env")
+	dbUrl := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbUrl)
+	if err != nil {
+		os.Exit(1)
+	}
+	dbQueries := database.New(db)
+
+	cfg := endpoints.ApiConfig{FileServerHits: atomic.Int32{}, Queries: dbQueries}
 	s := http.NewServeMux()
 	s.Handle("/app/", cfg.IncrementsMetrics(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	s.HandleFunc("GET /api/healthz", endpoints.ReadinessEndpoint)

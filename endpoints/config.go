@@ -1,6 +1,10 @@
 package endpoints
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+
+	"github.com/faxter/chirpy/internal/database"
+)
 
 const (
 	KEY_CONTENT_TYPE   = "Content-Type"
@@ -12,6 +16,7 @@ const (
 
 type ApiConfig struct {
 	FileServerHits atomic.Int32
+	Queries        *database.Queries
 }
 
 func BadWords() []string {
