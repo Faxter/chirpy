@@ -1,11 +1,14 @@
 package endpoints
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/faxter/chirpy/domain"
 )
 
 func ReadinessEndpoint(responseWriter http.ResponseWriter, _ *http.Request) {
@@ -23,7 +26,7 @@ func ChirpValidatorEndpoint(responseWriter http.ResponseWriter, request *http.Re
 	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		logmsg := fmt.Sprintf("Error decoding paraneters: %s", err)
+		logmsg := fmt.Sprintf("Error decoding parameters: %s", err)
 		log.Println(logmsg)
 		respondWithError(responseWriter, 500, logmsg)
 		return
@@ -95,4 +98,30 @@ func respondWithCleanedJson(body string, responseWriter http.ResponseWriter) {
 	}
 
 	respondWithJSON(responseWriter, 200, respBody)
+}
+
+func (a *ApiConfig) CreateUserEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
+	type parameters struct {
+		Body string `json:"email"`
+	}
+
+	decoder := json.NewDecoder(request.Body)
+	params := parameters{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error decoding parameters: %s", err)
+		log.Println(logmsg)
+		respondWithError(responseWriter, 500, logmsg)
+		return
+	}
+
+	dbUser, err := a.Queries.CreateUser(context.Background(), params.Body)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error creating user %s in database: %s", params.Body, err)
+		log.Println(logmsg)
+		respondWithError(responseWriter, 500, logmsg)
+		return
+	}
+	user := domain.User{ID: dbUser.ID, Email: dbUser.Email, CreatedAt: dbUser.CreatedAt, UpdatedAt: dbUser.CreatedAt}
+	respondWithJSON(responseWriter, 201, user)
 }

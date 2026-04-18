@@ -29,6 +29,7 @@ func main() {
 	s.HandleFunc("POST /api/validate_chirp", endpoints.ChirpValidatorEndpoint)
 	s.HandleFunc("GET /admin/metrics", cfg.MetricsEndpoint)
 	s.HandleFunc("POST /admin/reset", cfg.ResetMetricsEndpoint)
+	s.HandleFunc("POST /api/users", cfg.CreateUserEndpoint)
 	serv := new(http.Server)
 	serv.Handler = s
 	serv.Addr = ":8080"
