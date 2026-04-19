@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 func respondWithError(writer http.ResponseWriter, code int, msg string) {
@@ -32,18 +31,4 @@ func respondWithJSON(writer http.ResponseWriter, code int, payload interface{}) 
 	writer.Header().Set(KEY_CONTENT_TYPE, CONTENT_TYPE_JSON)
 	writer.WriteHeader(code)
 	writer.Write(dat)
-}
-
-func respondWithCleanedJson(body string, responseWriter http.ResponseWriter) {
-	type returnCleaned struct {
-		Cleaned string `json:"cleaned_body"`
-	}
-
-	bodyWordList := strings.Split(body, " ")
-	cleanedBody := strings.Join(censorWords(bodyWordList), " ")
-	respBody := returnCleaned{
-		Cleaned: cleanedBody,
-	}
-
-	respondWithJSON(responseWriter, 200, respBody)
 }
