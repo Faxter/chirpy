@@ -98,3 +98,19 @@ func censorWords(text string) string {
 
 	return strings.Join(result, " ")
 }
+
+func (a *ApiConfig) GetChirpsEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
+	chirpList, err := a.Queries.GetChirps(context.Background())
+	if err != nil {
+		msg := fmt.Sprint("Could not get chirps from database:", err)
+		respondWithError(responseWriter, 501, msg)
+		return
+	}
+
+	result := []domain.Chirp{}
+	for _, dbChirp := range chirpList {
+		result = append(result, domain.Chirp{Id: dbChirp.ID, CreatedAt: dbChirp.CreatedAt, UpdatedAt: dbChirp.UpdatedAt, Body: dbChirp.Body, UserId: dbChirp.UserID})
+	}
+
+	respondWithJSON(responseWriter, 200, result)
+}
