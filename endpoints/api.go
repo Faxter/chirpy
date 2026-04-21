@@ -1,7 +1,6 @@
 package endpoints
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -34,14 +33,18 @@ func (a *ApiConfig) CreateUserEndpoint(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	dbUser, err := a.Queries.CreateUser(context.Background(), params.Body)
+	dbUser, err := a.Queries.CreateUser(request.Context(), params.Body)
 	if err != nil {
 		logmsg := fmt.Sprintf("Error creating user %s in database: %s", params.Body, err)
 		log.Println(logmsg)
 		respondWithError(responseWriter, 501, logmsg)
 		return
 	}
-	user := domain.User{ID: dbUser.ID, Email: dbUser.Email, CreatedAt: dbUser.CreatedAt, UpdatedAt: dbUser.CreatedAt}
+	user := domain.User{
+		ID:        dbUser.ID,
+		Email:     dbUser.Email,
+		CreatedAt: dbUser.CreatedAt,
+		UpdatedAt: dbUser.CreatedAt}
 	respondWithJSON(responseWriter, 201, user)
 }
 
@@ -67,7 +70,7 @@ func (a *ApiConfig) CreateChirpEndpoint(responseWriter http.ResponseWriter, requ
 
 	cleanedBody := censorWords(params.Body)
 
-	dbChirp, err := a.Queries.CreateChirp(context.Background(), database.CreateChirpParams{Body: cleanedBody, UserID: params.UserId})
+	dbChirp, err := a.Queries.CreateChirp(request.Context(), database.CreateChirpParams{Body: cleanedBody, UserID: params.UserId})
 	if err != nil {
 		msg := fmt.Sprint("Could not create database entry:", err)
 		respondWithError(responseWriter, 501, msg)
@@ -75,7 +78,11 @@ func (a *ApiConfig) CreateChirpEndpoint(responseWriter http.ResponseWriter, requ
 	}
 
 	chirp := domain.Chirp{
-		Id: dbChirp.ID, CreatedAt: dbChirp.CreatedAt, UpdatedAt: dbChirp.UpdatedAt, Body: dbChirp.Body, UserId: dbChirp.UserID}
+		Id:        dbChirp.ID,
+		CreatedAt: dbChirp.CreatedAt,
+		UpdatedAt: dbChirp.UpdatedAt,
+		Body:      dbChirp.Body,
+		UserId:    dbChirp.UserID}
 	respondWithJSON(responseWriter, 201, chirp)
 }
 
@@ -100,7 +107,7 @@ func censorWords(text string) string {
 }
 
 func (a *ApiConfig) GetChirpsEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
-	chirpList, err := a.Queries.GetChirps(context.Background())
+	chirpList, err := a.Queries.GetChirps(request.Context())
 	if err != nil {
 		msg := fmt.Sprint("Could not get chirps from database:", err)
 		respondWithError(responseWriter, 501, msg)
@@ -109,7 +116,11 @@ func (a *ApiConfig) GetChirpsEndpoint(responseWriter http.ResponseWriter, reques
 
 	result := []domain.Chirp{}
 	for _, dbChirp := range chirpList {
-		result = append(result, domain.Chirp{Id: dbChirp.ID, CreatedAt: dbChirp.CreatedAt, UpdatedAt: dbChirp.UpdatedAt, Body: dbChirp.Body, UserId: dbChirp.UserID})
+		result = append(result, domain.Chirp{
+			Id:        dbChirp.ID,
+			CreatedAt: dbChirp.CreatedAt,
+			UpdatedAt: dbChirp.UpdatedAt,
+			Body:      dbChirp.Body, UserId: dbChirp.UserID})
 	}
 
 	respondWithJSON(responseWriter, 200, result)
