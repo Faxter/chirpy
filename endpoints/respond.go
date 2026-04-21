@@ -21,7 +21,7 @@ func respondWithError(writer http.ResponseWriter, code int, msg string) {
 	writer.Write(dat)
 }
 
-func respondWithJSON(writer http.ResponseWriter, code int, payload interface{}) {
+func respondWithJSON(writer http.ResponseWriter, code int, payload any) {
 	dat, err := json.Marshal(payload)
 	if err != nil {
 		respondWithError(writer, 500, "Error marshalling payload")
