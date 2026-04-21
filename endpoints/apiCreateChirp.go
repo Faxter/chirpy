@@ -3,7 +3,6 @@ package endpoints
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -11,42 +10,6 @@ import (
 	"github.com/faxter/chirpy/internal/database"
 	"github.com/google/uuid"
 )
-
-func ReadinessEndpoint(responseWriter http.ResponseWriter, _ *http.Request) {
-	responseWriter.Header().Add(KEY_CONTENT_TYPE, CONTENT_TYPE_PLAIN)
-	responseWriter.WriteHeader(http.StatusOK)
-	responseWriter.Write([]byte("OK"))
-}
-
-func (a *ApiConfig) CreateUserEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
-	type parameters struct {
-		Body string `json:"email"`
-	}
-
-	decoder := json.NewDecoder(request.Body)
-	params := parameters{}
-	err := decoder.Decode(&params)
-	if err != nil {
-		logmsg := fmt.Sprintf("Error decoding parameters: %s", err)
-		log.Println(logmsg)
-		respondWithError(responseWriter, 500, logmsg)
-		return
-	}
-
-	dbUser, err := a.Queries.CreateUser(request.Context(), params.Body)
-	if err != nil {
-		logmsg := fmt.Sprintf("Error creating user %s in database: %s", params.Body, err)
-		log.Println(logmsg)
-		respondWithError(responseWriter, 501, logmsg)
-		return
-	}
-	user := domain.User{
-		ID:        dbUser.ID,
-		Email:     dbUser.Email,
-		CreatedAt: dbUser.CreatedAt,
-		UpdatedAt: dbUser.CreatedAt}
-	respondWithJSON(responseWriter, 201, user)
-}
 
 func (a *ApiConfig) CreateChirpEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
 	type parameters struct {
@@ -104,24 +67,4 @@ func censorWords(text string) string {
 	}
 
 	return strings.Join(result, " ")
-}
-
-func (a *ApiConfig) GetChirpsEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
-	chirpList, err := a.Queries.GetChirps(request.Context())
-	if err != nil {
-		msg := fmt.Sprint("Could not get chirps from database:", err)
-		respondWithError(responseWriter, 501, msg)
-		return
-	}
-
-	result := []domain.Chirp{}
-	for _, dbChirp := range chirpList {
-		result = append(result, domain.Chirp{
-			Id:        dbChirp.ID,
-			CreatedAt: dbChirp.CreatedAt,
-			UpdatedAt: dbChirp.UpdatedAt,
-			Body:      dbChirp.Body, UserId: dbChirp.UserID})
-	}
-
-	respondWithJSON(responseWriter, 200, result)
 }
