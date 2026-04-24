@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/faxter/chirpy/domain"
+	"github.com/google/uuid"
 )
 
 func (a *ApiConfig) GetChirpsEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
@@ -21,8 +22,35 @@ func (a *ApiConfig) GetChirpsEndpoint(responseWriter http.ResponseWriter, reques
 			Id:        dbChirp.ID,
 			CreatedAt: dbChirp.CreatedAt,
 			UpdatedAt: dbChirp.UpdatedAt,
-			Body:      dbChirp.Body, UserId: dbChirp.UserID})
+			Body:      dbChirp.Body,
+			UserId:    dbChirp.UserID})
 	}
 
+	respondWithJSON(responseWriter, 200, result)
+}
+
+func (a *ApiConfig) GetSingleChirpEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
+	requestIdString := request.PathValue("chirpID")
+	requestedChirpId, err := uuid.Parse(requestIdString)
+	if err != nil {
+		msg := fmt.Sprintf("Could not convert %s into UUID: %s", requestIdString, err)
+		respondWithError(responseWriter, 502, msg)
+		return
+	}
+
+	chirp, err := a.Queries.GetChirp(request.Context(), requestedChirpId)
+	if err != nil {
+		msg := fmt.Sprintf("Could not get chirp from database: %s", err)
+		respondWithError(responseWriter, 404, msg)
+		return
+	}
+
+	result := domain.Chirp{
+		Id:        chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserId:    chirp.UserID,
+	}
 	respondWithJSON(responseWriter, 200, result)
 }

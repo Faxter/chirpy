@@ -34,6 +34,7 @@ func main() {
 	s.HandleFunc("POST /api/users", cfg.CreateUserEndpoint)
 	s.HandleFunc("POST /api/chirps", cfg.CreateChirpEndpoint)
 	s.HandleFunc("GET /api/chirps", cfg.GetChirpsEndpoint)
+	s.HandleFunc("GET /api/chirps/{chirpID}", cfg.GetSingleChirpEndpoint)
 	serv := new(http.Server)
 	serv.Handler = s
 	serv.Addr = ":8080"
