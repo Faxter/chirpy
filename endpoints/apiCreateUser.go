@@ -6,11 +6,14 @@ import (
 	"net/http"
 
 	"github.com/faxter/chirpy/domain"
+	"github.com/faxter/chirpy/internal/auth"
+	"github.com/faxter/chirpy/internal/database"
 )
 
 func (a *ApiConfig) CreateUserEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
 	type parameters struct {
-		Body string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	decoder := json.NewDecoder(request.Body)
@@ -23,9 +26,19 @@ func (a *ApiConfig) CreateUserEndpoint(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	dbUser, err := a.Queries.CreateUser(request.Context(), params.Body)
+	hashedPass, err := auth.HashPassword(params.Password)
 	if err != nil {
-		logmsg := fmt.Sprintf("Error creating user %s in database: %s", params.Body, err)
+		logmsg := fmt.Sprintf("Error hashing password: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 500, logmsg)
+		return
+	}
+
+	dbUser, err := a.Queries.CreateUser(request.Context(), database.CreateUserParams{
+		Email:          params.Email,
+		HashedPassword: hashedPass})
+	if err != nil {
+		logmsg := fmt.Sprintf("Error creating user %s in database: %s", params.Email, err)
 		fmt.Println(logmsg)
 		respondWithError(responseWriter, 501, logmsg)
 		return
