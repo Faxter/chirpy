@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -44,5 +45,24 @@ func TestValidateSignedJWTWithDifferentKey(t *testing.T) {
 	_, err := ValidateJWT(jwt, "differentKey")
 	if err == nil {
 		t.Errorf("expected validation to fail due to different sign key!")
+	}
+}
+
+func TestGetBearerToken(t *testing.T) {
+	header := http.Header{}
+	header.Set("Authorization", "Bearer some-token")
+
+	token, _ := GetBearerToken(header)
+	if token != "some-token" {
+		t.Errorf("extracted unexpected token: %s", token)
+	}
+}
+
+func TestGetBearerTokenFromEmptyAuthorizationHeader(t *testing.T) {
+	header := http.Header{}
+
+	_, err := GetBearerToken(header)
+	if err == nil {
+		t.Errorf("expected error because of missing authorization header!")
 	}
 }
