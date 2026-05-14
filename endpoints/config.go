@@ -18,6 +18,7 @@ type ApiConfig struct {
 	FileServerHits atomic.Int32
 	Queries        *database.Queries
 	Platform       string
+	Secret         string
 }
 
 func BadWords() []string {

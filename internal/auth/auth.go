@@ -27,28 +27,28 @@ func CheckPasswordHash(password, hash string) (bool, error) {
 	return match, nil
 }
 
-func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
+func MakeJWT(userID uuid.UUID, serverSecret string, expiresIn time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		Issuer:    "chirpy-access",
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
 		Subject:   userID.String(),
 	})
-	signedString, err := token.SignedString([]byte(tokenSecret))
+	signedString, err := token.SignedString([]byte(serverSecret))
 	if err != nil {
 		return "", err
 	}
 	return signedString, nil
 }
 
-func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
+func ValidateJWT(tokenString, serverSecret string) (uuid.UUID, error) {
 	type MyCustomClaims struct {
 		jwt.RegisteredClaims
 	}
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&MyCustomClaims{},
-		func(token *jwt.Token) (any, error) { return []byte(tokenSecret), nil })
+		func(token *jwt.Token) (any, error) { return []byte(serverSecret), nil })
 	if err != nil {
 		return uuid.UUID{}, err
 	}

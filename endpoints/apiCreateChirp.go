@@ -7,19 +7,34 @@ import (
 	"strings"
 
 	"github.com/faxter/chirpy/domain"
+	"github.com/faxter/chirpy/internal/auth"
 	"github.com/faxter/chirpy/internal/database"
-	"github.com/google/uuid"
 )
 
 func (a *ApiConfig) CreateChirpEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
 	type parameters struct {
-		Body   string    `json:"body"`
-		UserId uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
+	}
+
+	token, err := auth.GetBearerToken(request.Header)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error extracting token from authorization header: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 500, logmsg)
+		return
+	}
+
+	userId, err := auth.ValidateJWT(token, a.Secret)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error validating user: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 500, logmsg)
+		return
 	}
 
 	decoder := json.NewDecoder(request.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		logmsg := fmt.Sprintf("Error decoding parameters: %s", err)
 		respondWithError(responseWriter, 500, logmsg)
@@ -33,7 +48,7 @@ func (a *ApiConfig) CreateChirpEndpoint(responseWriter http.ResponseWriter, requ
 
 	cleanedBody := censorWords(params.Body)
 
-	dbChirp, err := a.Queries.CreateChirp(request.Context(), database.CreateChirpParams{Body: cleanedBody, UserID: params.UserId})
+	dbChirp, err := a.Queries.CreateChirp(request.Context(), database.CreateChirpParams{Body: cleanedBody, UserID: userId})
 	if err != nil {
 		msg := fmt.Sprint("Could not create database entry:", err)
 		respondWithError(responseWriter, 501, msg)

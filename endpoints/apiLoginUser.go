@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/faxter/chirpy/domain"
 	"github.com/faxter/chirpy/internal/auth"
@@ -13,6 +14,7 @@ func (a *ApiConfig) LoginUserEndpoint(responseWriter http.ResponseWriter, reques
 	type parameters struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
+		Expires  *int   `json:"expires_in_seconds"`
 	}
 
 	decoder := json.NewDecoder(request.Body)
@@ -48,11 +50,25 @@ func (a *ApiConfig) LoginUserEndpoint(responseWriter http.ResponseWriter, reques
 		return
 	}
 
+	expiration := 1 * time.Hour
+	if params.Expires != nil && *params.Expires < 3600 {
+		expiration = time.Duration(*params.Expires) * time.Second
+	}
+
+	jwt, err := auth.MakeJWT(dbUser.ID, a.Secret, expiration)
+	if err != nil {
+		logmsg := fmt.Sprintf("could not create JWT: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 500, logmsg)
+		return
+	}
+
 	user := domain.User{
 		ID:        dbUser.ID,
 		CreatedAt: dbUser.CreatedAt,
 		UpdatedAt: dbUser.UpdatedAt,
 		Email:     dbUser.Email,
+		Token:     jwt,
 	}
 	respondWithJSON(responseWriter, 200, user)
 }
