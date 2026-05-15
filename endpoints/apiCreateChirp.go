@@ -28,7 +28,7 @@ func (a *ApiConfig) CreateChirpEndpoint(responseWriter http.ResponseWriter, requ
 	if err != nil {
 		logmsg := fmt.Sprintf("Error validating user: %s", err)
 		fmt.Println(logmsg)
-		respondWithError(responseWriter, 500, logmsg)
+		respondWithError(responseWriter, 401, logmsg)
 		return
 	}
 
