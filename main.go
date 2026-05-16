@@ -22,6 +22,7 @@ func main() {
 	s.HandleFunc("GET /admin/metrics", cfg.MetricsEndpoint)
 	s.HandleFunc("POST /admin/reset", cfg.ResetEndpoint)
 	s.HandleFunc("POST /api/users", cfg.CreateUserEndpoint)
+	s.HandleFunc("PUT /api/users", cfg.UpdateUserEndpoint)
 	s.HandleFunc("POST /api/login", cfg.LoginUserEndpoint)
 	s.HandleFunc("POST /api/refresh", cfg.RefreshLoginEndpoint)
 	s.HandleFunc("POST /api/revoke", cfg.RevokeLoginEndpoint)
