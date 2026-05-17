@@ -9,6 +9,7 @@ import (
 	"github.com/faxter/chirpy/domain"
 	"github.com/faxter/chirpy/internal/auth"
 	"github.com/faxter/chirpy/internal/database"
+	"github.com/google/uuid"
 )
 
 func (a *ApiConfig) CreateChirpEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
@@ -82,4 +83,55 @@ func censorWords(text string) string {
 	}
 
 	return strings.Join(result, " ")
+}
+
+func (a *ApiConfig) DeleteSingleChirpEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
+	token, err := auth.GetBearerToken(request.Header)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error extracting token from authorization header: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 401, logmsg)
+		return
+	}
+
+	userIdOfRequestingUser, err := auth.ValidateJWT(token, a.Secret)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error validating user: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 403, logmsg)
+		return
+	}
+
+	chirpIdString := request.PathValue("chirpID")
+	chirpIdToDelete, err := uuid.Parse(chirpIdString)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error parsing chirp id: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 500, logmsg)
+		return
+	}
+
+	chirpData, err := a.Queries.GetChirp(request.Context(), chirpIdToDelete)
+	if err != nil {
+		logmsg := fmt.Sprintf("Could not find chirp in database: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 404, logmsg)
+		return
+	}
+
+	if chirpData.UserID != userIdOfRequestingUser {
+		logmsg := fmt.Sprintln("You are not allowed to delete chirp of another user!")
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 403, logmsg)
+		return
+	}
+
+	err = a.Queries.DeleteChirp(request.Context(), chirpIdToDelete)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error deleting chirp from database: %s", err)
+		respondWithError(responseWriter, 500, logmsg)
+		return
+	}
+
+	respondWithJSON(responseWriter, 204, "")
 }
