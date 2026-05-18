@@ -8,6 +8,7 @@ import (
 	"github.com/faxter/chirpy/domain"
 	"github.com/faxter/chirpy/internal/auth"
 	"github.com/faxter/chirpy/internal/database"
+	"github.com/google/uuid"
 )
 
 func (a *ApiConfig) CreateUserEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
@@ -47,7 +48,8 @@ func (a *ApiConfig) CreateUserEndpoint(responseWriter http.ResponseWriter, reque
 		ID:        dbUser.ID,
 		Email:     dbUser.Email,
 		CreatedAt: dbUser.CreatedAt,
-		UpdatedAt: dbUser.CreatedAt}
+		UpdatedAt: dbUser.CreatedAt,
+		IsPremium: dbUser.IsChirpyRed}
 	respondWithJSON(responseWriter, 201, user)
 }
 
@@ -103,6 +105,54 @@ func (a *ApiConfig) UpdateUserEndpoint(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	updatedUser := domain.User{ID: dbUser.ID, CreatedAt: dbUser.CreatedAt, UpdatedAt: dbUser.UpdatedAt, Email: dbUser.Email}
+	updatedUser := domain.User{
+		ID:        dbUser.ID,
+		CreatedAt: dbUser.CreatedAt,
+		UpdatedAt: dbUser.UpdatedAt,
+		Email:     dbUser.Email,
+		IsPremium: dbUser.IsChirpyRed}
 	respondWithJSON(responseWriter, 200, updatedUser)
+}
+
+func (a *ApiConfig) UpgradeUserEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
+	type data struct {
+		UserId string `json:"user_id"`
+	}
+
+	type parameters struct {
+		Event string `json:"event"`
+		Data  data   `json:"data"`
+	}
+
+	decoder := json.NewDecoder(request.Body)
+	params := parameters{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error decoding parameters: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 500, logmsg)
+		return
+	}
+
+	if params.Event != "user.upgraded" {
+		respondWithError(responseWriter, 204, "")
+		return
+	}
+
+	userId, err := uuid.Parse(params.Data.UserId)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error parsing user id: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 404, logmsg)
+		return
+	}
+
+	err = a.Queries.UpgradeUserToRed(request.Context(), userId)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error upgrading user in database: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 404, logmsg)
+	}
+
+	respondWithJSON(responseWriter, 204, "")
 }

@@ -23,3 +23,6 @@ UPDATE users SET
     updated_at = now()
 WHERE id = $1
 RETURNING *;
+
+-- name: UpgradeUserToRed :exec
+UPDATE users SET is_chirpy_red = true WHERE id = $1;

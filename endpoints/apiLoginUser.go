@@ -72,6 +72,7 @@ func (a *ApiConfig) LoginUserEndpoint(responseWriter http.ResponseWriter, reques
 		Email:        dbUser.Email,
 		Token:        jwt,
 		RefreshToken: refreshToken,
+		IsPremium:    dbUser.IsChirpyRed,
 	}
 	respondWithJSON(responseWriter, 200, user)
 }

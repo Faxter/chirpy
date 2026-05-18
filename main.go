@@ -30,6 +30,7 @@ func main() {
 	s.HandleFunc("GET /api/chirps", cfg.GetChirpsEndpoint)
 	s.HandleFunc("GET /api/chirps/{chirpID}", cfg.GetSingleChirpEndpoint)
 	s.HandleFunc("DELETE /api/chirps/{chirpID}", cfg.DeleteSingleChirpEndpoint)
+	s.HandleFunc("POST /api/polka/webhooks", cfg.UpgradeUserEndpoint)
 	serv := new(http.Server)
 	serv.Handler = s
 	serv.Addr = ":8080"
