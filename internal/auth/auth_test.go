@@ -66,3 +66,22 @@ func TestGetBearerTokenFromEmptyAuthorizationHeader(t *testing.T) {
 		t.Errorf("expected error because of missing authorization header!")
 	}
 }
+
+func TestGetApiKey(t *testing.T) {
+	header := http.Header{}
+	header.Set("Authorization", "ApiKey some-token")
+
+	token, _ := GetAPIKey(header)
+	if token != "some-token" {
+		t.Errorf("extracted unexpected api key: %s", token)
+	}
+}
+
+func TestGetApiKeyFromEmptyAuthorizationHeader(t *testing.T) {
+	header := http.Header{}
+
+	_, err := GetAPIKey(header)
+	if err == nil {
+		t.Errorf("expected error because of missing authorization header!")
+	}
+}

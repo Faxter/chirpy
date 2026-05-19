@@ -19,6 +19,7 @@ type ApiConfig struct {
 	Queries        *database.Queries
 	Platform       string
 	Secret         string
+	PolkaKey       string
 }
 
 func BadWords() []string {

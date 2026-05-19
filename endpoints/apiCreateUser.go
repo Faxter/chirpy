@@ -115,6 +115,21 @@ func (a *ApiConfig) UpdateUserEndpoint(responseWriter http.ResponseWriter, reque
 }
 
 func (a *ApiConfig) UpgradeUserEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
+	apiKey, err := auth.GetAPIKey(request.Header)
+	if err != nil {
+		logmsg := fmt.Sprintf("Error extracting API key from header: %s", err)
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 401, logmsg)
+		return
+	}
+
+	if apiKey != a.PolkaKey {
+		logmsg := fmt.Sprintln("incorrect API key!")
+		fmt.Println(logmsg)
+		respondWithError(responseWriter, 401, logmsg)
+		return
+	}
+
 	type data struct {
 		UserId string `json:"user_id"`
 	}
@@ -126,7 +141,7 @@ func (a *ApiConfig) UpgradeUserEndpoint(responseWriter http.ResponseWriter, requ
 
 	decoder := json.NewDecoder(request.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		logmsg := fmt.Sprintf("Error decoding parameters: %s", err)
 		fmt.Println(logmsg)

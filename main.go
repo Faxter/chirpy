@@ -48,6 +48,12 @@ func loadConfig() endpoints.ApiConfig {
 	dbQueries := database.New(db)
 	platform := os.Getenv("PLATFORM")
 	secret := os.Getenv("SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 
-	return endpoints.ApiConfig{FileServerHits: atomic.Int32{}, Queries: dbQueries, Platform: platform, Secret: secret}
+	return endpoints.ApiConfig{
+		FileServerHits: atomic.Int32{},
+		Queries:        dbQueries,
+		Platform:       platform,
+		Secret:         secret,
+		PolkaKey:       polkaKey}
 }
