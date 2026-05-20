@@ -5,15 +5,34 @@ import (
 	"net/http"
 
 	"github.com/faxter/chirpy/domain"
+	"github.com/faxter/chirpy/internal/database"
 	"github.com/google/uuid"
 )
 
 func (a *ApiConfig) GetChirpsEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
-	chirpList, err := a.Queries.GetChirps(request.Context())
-	if err != nil {
-		msg := fmt.Sprint("Could not get chirps from database:", err)
-		respondWithError(responseWriter, 501, msg)
-		return
+	author := request.URL.Query().Get("author_id")
+	chirpList := []database.Chirp{}
+	var err error
+	if author == "" {
+		chirpList, err = a.Queries.GetChirps(request.Context())
+		if err != nil {
+			msg := fmt.Sprint("Could not get chirps from database:", err)
+			respondWithError(responseWriter, 501, msg)
+			return
+		}
+	} else {
+		authorId, err := uuid.Parse(author)
+		if err != nil {
+			msg := fmt.Sprintf("Could not convert %s into UUID: %s", author, err)
+			respondWithError(responseWriter, 502, msg)
+			return
+		}
+		chirpList, err = a.Queries.GetChirpsByAuthor(request.Context(), authorId)
+		if err != nil {
+			msg := fmt.Sprint("Could not get chirps from database:", err)
+			respondWithError(responseWriter, 501, msg)
+			return
+		}
 	}
 
 	result := []domain.Chirp{}
