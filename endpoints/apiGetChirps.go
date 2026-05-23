@@ -3,6 +3,7 @@ package endpoints
 import (
 	"fmt"
 	"net/http"
+	"slices"
 
 	"github.com/faxter/chirpy/domain"
 	"github.com/faxter/chirpy/internal/database"
@@ -11,6 +12,7 @@ import (
 
 func (a *ApiConfig) GetChirpsEndpoint(responseWriter http.ResponseWriter, request *http.Request) {
 	author := request.URL.Query().Get("author_id")
+	sortOrder := request.URL.Query().Get("sort")
 	chirpList := []database.Chirp{}
 	var err error
 	if author == "" {
@@ -43,6 +45,10 @@ func (a *ApiConfig) GetChirpsEndpoint(responseWriter http.ResponseWriter, reques
 			UpdatedAt: dbChirp.UpdatedAt,
 			Body:      dbChirp.Body,
 			UserId:    dbChirp.UserID})
+	}
+
+	if sortOrder == "desc" {
+		slices.Reverse(result)
 	}
 
 	respondWithJSON(responseWriter, 200, result)
